@@ -1,8 +1,8 @@
 # 👋 Hello, I'm MARK
 
-[![Computer Science](https://img.shields.io/badge/Field-Computer%20Science-blue?style=flat-square)](https://github.com/mark)
-[![Student](https://img.shields.io/badge/Status-M.Sc.%20Student-green?style=flat-square)](https://github.com/mark)
-[![University](https://img.shields.io/badge/University-Central%20University-red?style=flat-square)](https://github.com/mark)
+[![Computer Science](https://img.shields.io/badge/Field-Computer%20Science-blue?style=flat-square)](https://github.com/malinga93142)
+[![Student](https://img.shields.io/badge/Status-M.Sc.%20Student-green?style=flat-square)](https://github.com/malinga93142)
+[![University](https://img.shields.io/badge/University-Central%20University-red?style=flat-square)](https://github.com/malinga93142)
 
 ## 🎓 About Me
 

@@ -49,10 +49,8 @@ Core Areas:
 
 ## 📫 Connect With Me
 
-- 📧 Email: [mark@example.com](mailto:mark@example.com)
+- 📧 Email: [MARK](mailto:mahalingaraya25@students.cutn.ac.in)
 - 🎓 University: Central University
-- 💼 LinkedIn: [linkedin.com/in/mark](https://linkedin.com/in/mark)
-- 🐦 Twitter: [@mark_cs](https://twitter.com/mark_cs)
 
 ## 💡 Philosophy
 
@@ -61,9 +59,6 @@ Core Areas:
 
 I approach computer science with curiosity and rigor, always seeking to understand not just *what* works, but *why* it works and *how* it works at the lowest levels.
 
-## 📈 GitHub Stats
-
-![MARK's GitHub stats](https://github-readme-stats.vercel.app/api?username=mark&show_icons=true&theme=radical)
 
 ## 🌱 Currently Learning
 

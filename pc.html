@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understanding Program Counter, Cache Memory, and Memory Hierarchy</title>
+    <style>
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            line-height: 1.7;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            color: #333;
+            background: #fefefe;
+        }
+
+        h1 {
+            font-size: 2em;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            font-size: 1.5em;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            color: #222;
+        }
+
+        h3 {
+            font-size: 1.2em;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        p, li {
+            margin-bottom: 12px;
+        }
+
+        code {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            padding: 2px 5px;
+            border: 1px solid #ddd;
+        }
+
+        pre {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 15px;
+            overflow-x: auto;
+            line-height: 1.4;
+        }
+
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        .note {
+            border-left: 3px solid #333;
+            padding-left: 15px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+
+        .important {
+            border: 1px solid #333;
+            padding: 15px;
+            margin: 20px 0;
+            background: #f9f9f9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+
+        ol, ul {
+            margin-left: 25px;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 40px 0;
+        }
+
+        .author {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+            font-size: 0.95em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Understanding Program Counter, Cache Memory, and Memory Hierarchy</h1>
+
+    <p><em>Computer Architecture Notes by MARK</em></p>
+
+    <h2>1. Introduction: Where Does PC Point?</h2>
+
+    <h3>The Fundamental Question</h3>
+    <p>Textbooks often state: "The Program Counter (PC) points to the next instruction to be executed."</p>
+    
+    <p><strong>But where exactly is that instruction?</strong> Is it in main memory? L1 instruction cache? L2 or L3 cache?</p>
+
+    <h3>The Answer</h3>
+    <p>The PC contains a <strong>virtual memory address</strong> that conceptually points to a location in the <strong>main memory address space</strong>. However, in practice:</p>
+    
+    <ol>
+        <li>The PC holds a <strong>virtual address</strong></li>
+        <li>The MMU (Memory Management Unit) translates it to a <strong>physical address</strong></li>
+        <li>The instruction is fetched from <strong>L1i cache</strong> (if present)</li>
+        <li>On cache miss, it's fetched from lower levels: L2 → L3 → Main Memory</li>
+        <li>The CPU's execution core can only consume instructions from L1i</li>
+    </ol>
+
+    <div class="important">
+        <strong>Key Point:</strong> The CPU's execution core can only consume instructions that are present in L1i. On a cache miss, the memory controller brings the data into L1i, and the core then reads it from there. While the core itself never accesses main memory directly, the hardware memory subsystem may use techniques like direct data placement for prefetching or streaming that can bypass some cache levels.
+    </div>
+
+    <h2>2. Why Memory Hierarchy Matters</h2>
+
+    <h3>The Critical Principle</h3>
+    <p>The CPU's execution core always interfaces with L1 cache. It never directly executes instructions from main memory or lower-level caches.</p>
+
+    <h3>Cache Miss Flow</h3>
+    <pre>
+Main Memory (~200+ cycles)
+     ↓
+L3 Cache (~40 cycles)
+     ↓
+L2 Cache (~12 cycles)
+     ↓
+L1 Cache (~4 cycles)
+     ↓
+   CPU
+    </pre>
+
+    <div class="note">
+        <strong>Key insight:</strong> If the CPU could bypass caches and execute directly from main memory, the entire memory hierarchy would be pointless! The hierarchy works because the CPU always goes through L1, and cache misses are amortized over many subsequent fast hits.
+    </div>
+
+    <h3>Performance Impact</h3>
+    <table>
+        <tr>
+            <th>Level</th>
+            <th>Access Time</th>
+        </tr>
+        <tr>
+            <td>L1 hit</td>
+            <td>~4 cycles</td>
+        </tr>
+        <tr>
+            <td>L2 hit</td>
+            <td>~12 cycles</td>
+        </tr>
+        <tr>
+            <td>L3 hit</td>
+            <td>~40 cycles</td>
+        </tr>
+        <tr>
+            <td>Main memory</td>
+            <td>~200+ cycles</td>
+        </tr>
+    </table>
+
+    <h2>3. Cache Hit/Miss Detection</h2>
+
+    <h3>Cache Line Structure</h3>
+    <p>Each cache line contains:</p>
+    <ul>
+        <li><strong>Tag bits</strong>: Upper portion of memory address</li>
+        <li><strong>Valid bit</strong>: Indicates if line contains valid data</li>
+        <li><strong>Data/Instruction</strong>: The actual cached content</li>
+        <li><strong>Metadata</strong>: Dirty bit, replacement policy bits, etc.</li>
+    </ul>
+
+    <h3>Address Decomposition</h3>
+    <p>A memory address is split into three parts:</p>
+    <table>
+        <tr>
+            <th>Tag</th>
+            <th>Index</th>
+            <th>Offset</th>
+        </tr>
+        <tr>
+            <td>Identifies memory block</td>
+            <td>Selects cache line</td>
+            <td>Byte within line</td>
+        </tr>
+    </table>
+
+    <h3>Hit/Miss Determination Algorithm</h3>
+    <ol>
+        <li>Use <strong>Index</strong> bits to select cache line</li>
+        <li>Check <strong>Valid bit</strong> (must be 1)</li>
+        <li>Compare <strong>Tag</strong> from address with stored tag</li>
+        <li><strong>Hit</strong> if: Valid = 1 AND Tags match</li>
+        <li><strong>Miss</strong> if: Valid = 0 OR Tags don't match</li>
+    </ol>
+
+    <div class="note">
+        The offset alone does NOT determine hit or miss. The offset simply tells us which byte within the cache line to access. Hit/miss is determined by the tag comparison and valid bit.
+    </div>
+
+    <h2>4. PC Behavior on Cache Miss</h2>
+
+    <h3>What Happens on Instruction Cache Miss?</h3>
+    <p>When L1i cache miss occurs:</p>
+    <ol>
+        <li>Fetch stage attempts to read from L1i using current PC value</li>
+        <li>Cache miss detected</li>
+        <li><strong>Pipeline stalls</strong> — PC holds its current value, doesn't increment</li>
+        <li>Miss handling begins — request propagates: L2 → L3 → Main Memory</li>
+        <li>CPU waits (entire pipeline typically stalls in simple in-order cores)</li>
+        <li>Instruction arrives and is loaded into L1i</li>
+        <li>PC advances — fetch completes, pipeline resumes</li>
+    </ol>
+
+    <div class="important">
+        <strong>Critical point:</strong> The PC doesn't move to the next instruction until the current instruction is successfully fetched into L1i. You cannot execute what you don't have.
+    </div>
+
+    <h3>Out-of-Order Execution</h3>
+    <p>The complete pipeline stall described above applies to <strong>simple in-order execution cores</strong>. Modern <strong>out-of-order (OoO) processors</strong> are more sophisticated:</p>
+    <ul>
+        <li>OoO CPUs may execute independent instructions from later in the code stream that are already cached</li>
+        <li>Simultaneous Multithreading (SMT) allows execution from a separate thread while waiting</li>
+        <li>The fetch stage still stalls for the missing instruction, but execution units may remain busy</li>
+        <li>However, forward progress on the thread with the I-cache miss is still blocked until the instruction arrives</li>
+    </ul>
+
+    <h2>5. Complete Example: Real Assembly Code</h2>
+
+    <h3>Sample Program</h3>
+    <pre><code>Address        Machine Code      Instruction
+0x00000000:    66 b8 01 00      mov $0x1,%ax
+0x00000004:    66 83 c0 01      add $0x1,%ax</code></pre>
+
+    <h3>Cache Configuration</h3>
+    <ul>
+        <li><strong>Cache size</strong>: 16 KB (16,384 bytes)</li>
+        <li><strong>Line size</strong>: 64 bytes</li>
+        <li><strong>Associativity</strong>: Direct-mapped</li>
+        <li><strong>Number of lines</strong>: 16,384 / 64 = 256 lines</li>
+    </ul>
+
+    <h3>Address Bit Allocation (32-bit addresses)</h3>
+    <ul>
+        <li><strong>Offset bits</strong>: log₂(64) = 6 bits</li>
+        <li><strong>Index bits</strong>: log₂(256) = 8 bits</li>
+        <li><strong>Tag bits</strong>: 32 - 8 - 6 = 18 bits</li>
+    </ul>
+
+    <hr>
+
+    <h3>Step 1: PC = 0x00000000 (First Instruction)</h3>
+
+    <p><strong>Address Breakdown:</strong></p>
+    <pre>Address = 0x00000000
+        = 0000 0000 0000 0000 0000 0000 0000 0000 (binary)
+
+| Tag (18 bits)           | Index (8 bits) | Offset (6 bits) |
+| 000000000000000000      | 00000000       | 000000          |
+| 0x00000                 | 0x00          | 0x00           |</pre>
+
+    <p><strong>Cache Lookup:</strong></p>
+    <ul>
+        <li>Check cache line at index = 0</li>
+        <li>Check if tag = <code>0x00000</code></li>
+        <li>Check valid bit</li>
+    </ul>
+
+    <p><strong>Result:</strong> Assuming cold start (empty cache), valid bit = 0</p>
+    <p><strong>CACHE MISS</strong></p>
+
+    <p><strong>What Happens:</strong></p>
+    <ol>
+        <li>Pipeline stalls, PC remains at <code>0x00000000</code></li>
+        <li>Fetch 64-byte block starting from physical address <code>0x00000000</code></li>
+        <li>Block contains addresses <code>0x00000000</code> through <code>0x0000003F</code></li>
+        <li>Load into L1i at cache line index 0</li>
+        <li>Set tag = <code>0x00000</code>, valid = 1</li>
+        <li>Extract bytes at offset 0: <code>66 b8 01 00</code></li>
+        <li>Decode instruction: <code>mov $0x1,%ax</code></li>
+        <li>Execute: Load value 1 into register AX</li>
+        <li>PC advances to <code>0x00000004</code></li>
+    </ol>
+
+    <div class="important">
+        <strong>Critical Understanding:</strong> PC = 0x00000000 is the memory address. The bytes <code>66 b8 01 00</code> are the instruction content stored AT that address. The instruction bytes MUST be in L1i cache before the CPU can decode and execute them.
+    </div>
+
+    <hr>
+
+    <h3>Step 2: PC = 0x00000004 (Second Instruction)</h3>
+
+    <p><strong>Address Breakdown:</strong></p>
+    <pre>Address = 0x00000004
+        = 0000 0000 0000 0000 0000 0000 0000 0100 (binary)
+
+| Tag (18 bits)           | Index (8 bits) | Offset (6 bits) |
+| 000000000000000000      | 00000000       | 000100          |
+| 0x00000                 | 0x00          | 0x04           |</pre>
+
+    <p><strong>Cache Lookup:</strong></p>
+    <ul>
+        <li>Check cache line at index = 0</li>
+        <li>Stored tag = <code>0x00000</code> ✓ (matches!)</li>
+        <li>Valid bit = 1 ✓</li>
+    </ul>
+
+    <p><strong>Result: CACHE HIT</strong></p>
+
+    <p><strong>What Happens:</strong></p>
+    <ol>
+        <li>No pipeline stall! Instruction already in cache</li>
+        <li>Extract bytes at offset 4: <code>66 83 c0 01</code></li>
+        <li>Decode instruction: <code>add $0x1,%ax</code></li>
+        <li>Execute: Add 1 to register AX</li>
+        <li>PC advances to <code>0x00000008</code></li>
+    </ol>
+
+    <h3>Key Observations</h3>
+    <ol>
+        <li><strong>First instruction: MISS</strong> (cold start)</li>
+        <li><strong>Second instruction: HIT</strong> (spatial locality!)</li>
+        <li>Both instructions fit in the same 64-byte cache line</li>
+        <li>We fetched 64 bytes but only needed 8 bytes total for both instructions</li>
+        <li><strong>This "waste" is intentional and fundamental:</strong> It exploits spatial locality. The initial miss is expensive (~200 cycles), but subsequent accesses in the same block are fast (~4 cycles)</li>
+        <li>After the initial miss, we achieve 100% hit rate for subsequent instructions in the same block</li>
+        <li>This demonstrates why memory hierarchy exists and why it's effective</li>
+    </ol>
+
+    <h2>6. Virtual vs Physical Addresses</h2>
+
+    <h3>The Complete Picture</h3>
+    <p>The PC holds a <strong>virtual address</strong>, not a physical address (in systems with virtual memory).</p>
+    
+    <p><strong>Complete flow:</strong></p>
+    <ol>
+        <li>PC contains <strong>virtual address</strong> of next instruction</li>
+        <li>Virtual address sent to <strong>MMU (Memory Management Unit)</strong></li>
+        <li>MMU uses <strong>TLB (Translation Lookaside Buffer)</strong> to translate</li>
+        <li><strong>Physical address</strong> is produced</li>
+        <li>Physical address used to check <strong>L1i cache</strong></li>
+        <li>On cache miss, physical address propagates through memory hierarchy</li>
+    </ol>
+
+    <h3>TLB (Translation Lookaside Buffer)</h3>
+    <ul>
+        <li><strong>TLB Hit</strong> (common case): Translation happens in ~1 cycle, very fast</li>
+        <li><strong>TLB Miss</strong> (rare): Must walk page table in memory, expensive! Can require multiple memory accesses</li>
+    </ul>
+
+    <div class="note">
+        The virtual-to-physical translation adds another layer of complexity. A memory access can miss in both the TLB (requiring page table walk) and the cache (requiring fetch from lower memory hierarchy). Both penalties can compound.
+    </div>
+
+    <h2>7. Summary: Core Concepts</h2>
+
+    <ol>
+        <li><strong>PC holds virtual address</strong> that maps to the process's virtual address space</li>
+        <li><strong>Instructions must be in L1i</strong> for the CPU core to execute them</li>
+        <li><strong>CPU core always interfaces with L1</strong>, never bypasses it to access main memory directly</li>
+        <li><strong>Cache miss causes pipeline stall</strong> in simple in-order cores (PC doesn't advance until instruction arrives)</li>
+        <li><strong>Hit/miss detection</strong> uses tag bits and valid bit; offset selects byte within line</li>
+        <li><strong>Virtual-to-physical translation</strong> via MMU/TLB happens before cache lookup</li>
+        <li><strong>Memory hierarchy works</strong> because all accesses go through L1</li>
+        <li><strong>Spatial locality</strong> is exploited by fetching larger blocks (cache lines)</li>
+    </ol>
+
+    <h2>8. Common Misconceptions</h2>
+
+    <table>
+        <tr>
+            <th>Misconception</th>
+            <th>Reality</th>
+        </tr>
+        <tr>
+            <td>PC points directly to L1i cache</td>
+            <td>PC holds a virtual address in the process's virtual address space</td>
+        </tr>
+        <tr>
+            <td>CPU executes from main memory on cache miss</td>
+            <td>CPU core waits for instruction to arrive in L1i; never accesses main memory directly</td>
+        </tr>
+        <tr>
+            <td>Offset determines hit/miss</td>
+            <td>Tag + Valid bit determine hit/miss; offset selects byte within cache line</td>
+        </tr>
+        <tr>
+            <td>PC holds physical address</td>
+            <td>PC holds virtual address (translated by MMU/TLB)</td>
+        </tr>
+        <tr>
+            <td>Pipeline continues during I-cache miss</td>
+            <td>Simple cores stall completely; OoO cores may execute independent instructions</td>
+        </tr>
+        <tr>
+            <td>Fetching 64 bytes when needing 8 is wasteful</td>
+            <td>This is the fundamental trade-off that makes caches work via spatial locality</td>
+        </tr>
+    </table>
+
+    <div class="author">
+        <p><strong>Author:</strong> MARK</p>
+        <p>M.Sc. Computer Science Student at Central University</p>
+        <p><em>"Core computer science is not just my passion, it is everyday life for me."</em></p>
+        <p>November 2025</p>
+    </div>
+</body>
+</html>

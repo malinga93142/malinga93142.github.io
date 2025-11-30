@@ -28,7 +28,7 @@ I maintain detailed technical notes and documentation on various computer scienc
   - Cache hit/miss detection mechanisms
   - Virtual vs physical addressing
   - Perfect for anyone learning computer architecture!
-- **[Tikz Manual] (./tikz.md)**
+- **[Tikz Manual](./tikz.md)**
 
 ## 🔧 Technologies & Interests
 

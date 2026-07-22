@@ -1,6 +1,18 @@
 # ELF: From File Layout to Process Image
 
 ## 1. Introduction
+Every day, we execute programs without giving much thought to what happens behind the scenes.
+```c
+#include <stdio.h>
+
+int main() {
+	printf("Hello, world!\n");
+	return 0;
+}
+```
+```bash
+$./hello
+```
 ## 2. The Journey of an Executable
 ## 3. The anatomy of an ELF File
 ## 4. The ELF Reader
